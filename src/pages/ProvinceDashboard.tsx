@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
-import { Card, Button, Space, Table, Tag } from 'antd';
+import { Card, Button, Space, Table, Tag, Spin } from 'antd';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
 import KPICard from '@/components/KPICard';
 import { useAppStore } from '@/store/useAppStore';
@@ -11,18 +11,22 @@ import type { Enterprise } from '@/types';
 const ProvinceDashboard: React.FC = () => {
   const { provinceCode } = useParams<{ provinceCode: string }>();
   const navigate = useNavigate();
-  const { getProvinceByCode, getFilteredEnterprises, getIndustryCreditData } = useAppStore();
+  const { provinceData, enterprises, loading, fetchProvinceData, fetchEnterprises, getProvinceByCode } = useAppStore();
 
-  const provinceData = getProvinceByCode(provinceCode || '');
-  const provinceEnterprises = getFilteredEnterprises({ province: provinceCode });
-  const industryCreditData = getIndustryCreditData();
+  useEffect(() => {
+    fetchProvinceData();
+    fetchEnterprises();
+  }, [fetchProvinceData, fetchEnterprises]);
+
+  const provinceInfo = getProvinceByCode(provinceCode || '');
+  const provinceEnterprises = enterprises.filter(e => e.provinceCode === provinceCode);
 
   const kpiData = useMemo(() => {
-    if (!provinceData) return [];
+    if (!provinceInfo) return [];
     const avgCreditScore = provinceEnterprises.length > 0
       ? (provinceEnterprises.reduce((sum, e) => sum + e.creditScore, 0) / provinceEnterprises.length).toFixed(1)
       : 0;
-    const defaultRate = provinceData.defaultRate;
+    const defaultRate = provinceInfo.defaultRate;
     const alertCount = provinceEnterprises.filter(e => e.alertStatus !== 'normal').length;
     const enterpriseCount = provinceEnterprises.length;
 
@@ -32,11 +36,11 @@ const ProvinceDashboard: React.FC = () => {
       { title: '违约率', value: defaultRate, unit: '%', change: -0.3, changeType: 'decrease' as const, trendData: [3.2, 3.5, 3.3, 3.1, 2.9, 2.8] },
       { title: '预警企业', value: alertCount, unit: '家', change: 2, changeType: 'increase' as const, trendData: [8, 10, 9, 11, 12, 14] },
     ];
-  }, [provinceData, provinceEnterprises]);
+  }, [provinceInfo, provinceEnterprises]);
 
   const cityCreditOption = useMemo(() => {
-    if (!provinceData?.cities) return {};
-    const cities = provinceData.cities;
+    if (!provinceInfo?.cities) return {};
+    const cities = provinceInfo.cities;
     return {
       tooltip: {
         trigger: 'axis',
@@ -298,6 +302,27 @@ const ProvinceDashboard: React.FC = () => {
     );
   }
 
+  if (loading.provinceData || loading.enterprises) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="加载区域数据中..." />
+      </div>
+    );
+  }
+
+  if (!provinceInfo) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-neutral-500">未找到该省份数据</p>
+          <Button type="primary" onClick={() => navigate('/dashboard')} className="mt-4">
+            返回全国看板
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -308,7 +333,7 @@ const ProvinceDashboard: React.FC = () => {
           返回全国看板
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-700">{provinceData.provinceName}</h1>
+          <h1 className="text-2xl font-bold text-neutral-700">{provinceInfo.provinceName}</h1>
           <p className="text-neutral-400 mt-1">区域信用风险详细分析</p>
         </div>
       </div>

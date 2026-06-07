@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Card, Select, Input, Tag, Space, Button } from 'antd';
+import { Table, Card, Select, Input, Tag, Space, Button, Spin } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Filter, Download, Eye } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
@@ -12,7 +12,7 @@ const { Search } = Input;
 
 const Enterprises: React.FC = () => {
   const navigate = useNavigate();
-  const { enterprises, getFilteredEnterprises } = useAppStore();
+  const { enterprises, provinceData, loading, fetchEnterprises, fetchProvinceData } = useAppStore();
   const [searchText, setSearchText] = useState('');
   const [filters, setFilters] = useState({
     province: '',
@@ -21,6 +21,11 @@ const Enterprises: React.FC = () => {
     creditLevel: '',
     alertStatus: '',
   });
+
+  useEffect(() => {
+    fetchEnterprises();
+    fetchProvinceData();
+  }, [fetchEnterprises, fetchProvinceData]);
 
   const creditLevelColors: Record<string, string> = {
     AAA: 'bg-success-500',
@@ -59,6 +64,14 @@ const Enterprises: React.FC = () => {
     if (filters.alertStatus && e.alertStatus !== filters.alertStatus) return false;
     return true;
   });
+
+  if (loading.enterprises || loading.provinceData) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="加载企业数据中..." />
+      </div>
+    );
+  }
 
   const columns: ColumnsType<Enterprise> = [
     {
@@ -210,7 +223,7 @@ const Enterprises: React.FC = () => {
               style={{ width: 140 }}
               allowClear
             >
-              {useAppStore.getState().provinceData.map(p => (
+              {provinceData.map(p => (
                 <Option key={p.provinceCode} value={p.provinceCode}>{p.provinceName}</Option>
               ))}
             </Select>

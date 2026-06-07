@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Table,
@@ -15,6 +15,7 @@ import {
   Statistic,
   Row,
   Col,
+  Spin,
 } from 'antd';
 import {
   CheckCircleOutlined,
@@ -29,11 +30,15 @@ import type { ApprovalProcess, ApprovalStep } from '@/types';
 const { TextArea } = Input;
 
 const ApprovalWorkbench: React.FC = () => {
-  const { approvalProcesses, currentUser, approveStep } = useAppStore();
+  const { approvalProcesses, loading, fetchApprovals, currentUser, approveStep, rejectStep } = useAppStore();
   const [selectedProcess, setSelectedProcess] = useState<ApprovalProcess | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
 
   const pendingCount = approvalProcesses.filter(p => p.status === 'pending').length;
   const approvedCount = approvalProcesses.filter(p => p.status === 'approved').length;
@@ -56,7 +61,8 @@ const ApprovalWorkbench: React.FC = () => {
     try {
       const values = await form.validateFields();
       if (selectedProcess && currentUser) {
-        approveStep(
+        const actionFn = actionType === 'approve' ? approveStep : rejectStep;
+        await actionFn(
           selectedProcess.id,
           selectedProcess.currentStep,
           currentUser.name,
@@ -69,6 +75,14 @@ const ApprovalWorkbench: React.FC = () => {
       console.error('Validation failed:', err);
     }
   };
+
+  if (loading.approvals) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="加载审批数据中..." />
+      </div>
+    );
+  }
 
   const columns: ColumnsType<ApprovalProcess> = [
     {

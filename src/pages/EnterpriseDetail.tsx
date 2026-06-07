@@ -1,18 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
-import { Card, Tabs, Tag, Button, Descriptions, Table, Alert as AntAlert } from 'antd';
+import { Card, Tabs, Tag, Button, Descriptions, Table, Alert as AntAlert, Spin } from 'antd';
 import { ArrowLeft, AlertTriangle, FileText, TrendingDown } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import type { Enterprise } from '@/types';
 import type { ColumnsType } from 'antd/es/table';
-
-const { TabPane } = Tabs;
 
 const EnterpriseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getEnterpriseById, alerts } = useAppStore();
-  const enterprise = getEnterpriseById(id || '');
+  const { enterprises, alerts, loading, fetchEnterpriseDetail, fetchAlerts } = useAppStore();
+  const [enterprise, setEnterprise] = useState<Enterprise | null>(null);
+
+  useEffect(() => {
+    if (id) {
+      fetchEnterpriseDetail(id).then(data => {
+        if (data) setEnterprise(data);
+      });
+      fetchAlerts();
+    }
+  }, [id, fetchEnterpriseDetail, fetchAlerts]);
+
+  useEffect(() => {
+    const found = enterprises.find(e => e.id === id);
+    if (found && !enterprise) {
+      setEnterprise(found);
+    }
+  }, [enterprises, id, enterprise]);
+
+  if (loading.enterprises && !enterprise) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="加载企业详情中..." />
+      </div>
+    );
+  }
 
   if (!enterprise) {
     return (
@@ -346,84 +369,107 @@ const EnterpriseDetail: React.FC = () => {
       </div>
 
       <Card className="shadow-card" bordered={false}>
-        <Tabs defaultActiveKey="1">
-          <TabPane tab="信用画像" key="1">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-medium mb-4">信用分历史趋势</h4>
-                <div style={{ height: 300 }}>
-                  <ReactECharts option={scoreHistoryOption} style={{ height: '100%', width: '100%' }} />
+        <Tabs
+          defaultActiveKey="1"
+          items={[
+            {
+              key: '1',
+              label: '信用画像',
+              children: (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+                  <div>
+                    <h4 className="font-medium mb-4">信用分历史趋势</h4>
+                    <div style={{ height: 300 }}>
+                      <ReactECharts option={scoreHistoryOption} style={{ height: '100%', width: '100%' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-4">多维度评分对比</h4>
+                    <div style={{ height: 300 }}>
+                      <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-medium mb-4">多维度评分对比</h4>
-                <div style={{ height: 300 }}>
-                  <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
+              ),
+            },
+            {
+              key: '2',
+              label: '财务分析',
+              children: (
+                <div className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card size="small" className="shadow-none border">
+                      <div className="text-xs text-neutral-400 mb-1">资产负债率</div>
+                      <div className="text-xl font-bold font-mono">{enterprise.assetLiabilityRatio.toFixed(1)}%</div>
+                    </Card>
+                    <Card size="small" className="shadow-none border">
+                      <div className="text-xs text-neutral-400 mb-1">流动比率</div>
+                      <div className="text-xl font-bold font-mono">1.25</div>
+                    </Card>
+                    <Card size="small" className="shadow-none border">
+                      <div className="text-xs text-neutral-400 mb-1">净资产收益率</div>
+                      <div className="text-xl font-bold font-mono">5.2%</div>
+                    </Card>
+                    <Card size="small" className="shadow-none border">
+                      <div className="text-xs text-neutral-400 mb-1">总资产周转率</div>
+                      <div className="text-xl font-bold font-mono">0.45</div>
+                    </Card>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </TabPane>
-
-          <TabPane tab="财务分析" key="2">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card size="small" className="shadow-none border">
-                  <div className="text-xs text-neutral-400 mb-1">资产负债率</div>
-                  <div className="text-xl font-bold font-mono">{enterprise.assetLiabilityRatio.toFixed(1)}%</div>
-                </Card>
-                <Card size="small" className="shadow-none border">
-                  <div className="text-xs text-neutral-400 mb-1">流动比率</div>
-                  <div className="text-xl font-bold font-mono">1.25</div>
-                </Card>
-                <Card size="small" className="shadow-none border">
-                  <div className="text-xs text-neutral-400 mb-1">净资产收益率</div>
-                  <div className="text-xl font-bold font-mono">5.2%</div>
-                </Card>
-                <Card size="small" className="shadow-none border">
-                  <div className="text-xs text-neutral-400 mb-1">总资产周转率</div>
-                  <div className="text-xl font-bold font-mono">0.45</div>
-                </Card>
-              </div>
-            </div>
-          </TabPane>
-
-          <TabPane tab="股东信息" key="3">
-            <Table
-              dataSource={enterprise.shareholders || []}
-              rowKey={(record, index) => index?.toString() || ''}
-              pagination={false}
-              columns={[
-                { title: '股东名称', dataIndex: 'name', key: 'name' },
-                { title: '持股比例', dataIndex: 'shareRatio', key: 'shareRatio', render: v => `${v}%` },
-                { title: '认缴出资额', dataIndex: 'subscribedAmount', key: 'subscribedAmount', render: v => `${v}万元` },
-              ]}
-            />
-          </TabPane>
-
-          <TabPane tab="预警记录" key="4">
-            <Table
-              dataSource={enterpriseAlerts}
-              columns={alertColumns}
-              rowKey="id"
-              pagination={false}
-            />
-            {enterpriseAlerts.length === 0 && (
-              <div className="text-center py-12 text-neutral-400">暂无预警记录</div>
-            )}
-          </TabPane>
-
-          <TabPane tab="风险标签" key="5">
-            <div className="flex flex-wrap gap-2">
-              {(enterprise.riskTags || []).length > 0 ? (
-                enterprise.riskTags?.map((tag, i) => (
-                  <Tag key={i} color="red" icon={<AlertTriangle size={12} />}>{tag}</Tag>
-                ))
-              ) : (
-                <div className="text-neutral-400">暂无风险标签</div>
-              )}
-            </div>
-          </TabPane>
-        </Tabs>
+              ),
+            },
+            {
+              key: '3',
+              label: '股东信息',
+              children: (
+                <div className="pt-4">
+                  <Table
+                    dataSource={enterprise.shareholders || []}
+                    rowKey={(record, index) => index?.toString() || ''}
+                    pagination={false}
+                    columns={[
+                      { title: '股东名称', dataIndex: 'name', key: 'name' },
+                      { title: '持股比例', dataIndex: 'shareRatio', key: 'shareRatio', render: v => `${v}%` },
+                      { title: '认缴出资额', dataIndex: 'subscribedAmount', key: 'subscribedAmount', render: v => `${v}万元` },
+                    ]}
+                  />
+                </div>
+              ),
+            },
+            {
+              key: '4',
+              label: '预警记录',
+              children: (
+                <div className="pt-4">
+                  <Table
+                    dataSource={enterpriseAlerts}
+                    columns={alertColumns}
+                    rowKey="id"
+                    pagination={false}
+                  />
+                  {enterpriseAlerts.length === 0 && (
+                    <div className="text-center py-12 text-neutral-400">暂无预警记录</div>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: '5',
+              label: '风险标签',
+              children: (
+                <div className="flex flex-wrap gap-2 pt-4">
+                  {(enterprise.riskTags || []).length > 0 ? (
+                    enterprise.riskTags?.map((tag, i) => (
+                      <Tag key={i} color="red" icon={<AlertTriangle size={12} />}>{tag}</Tag>
+                    ))
+                  ) : (
+                    <div className="text-neutral-400">暂无风险标签</div>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
       </Card>
     </div>
   );

@@ -10,18 +10,31 @@ const { Option } = Select;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { provinceData, getKPIData, getIndustryRanking, getRegionRanking, getMonthlyTrendData, getIndustryCreditData, fetchDashboardData, isLoading } = useAppStore();
+  const { provinceData, loading, getKPIData, getIndustryRanking, getRegionRanking, getMonthlyTrendData, getIndustryCreditData, fetchDashboardData, fetchProvinceData, error } = useAppStore();
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>('6m');
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchProvinceData();
+  }, [fetchDashboardData, fetchProvinceData]);
 
-  if (isLoading && provinceData.length === 0) {
+  const isLoading = loading.dashboard || loading.provinceData;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <Spin size="large" tip="数据加载中..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+        </div>
       </div>
     );
   }
@@ -123,7 +136,7 @@ const Dashboard: React.FC = () => {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: monthlyTrend.months,
+      data: (monthlyTrend as any).months || [],
     },
     yAxis: [
       {
@@ -142,7 +155,7 @@ const Dashboard: React.FC = () => {
         name: '违约率',
         type: 'line',
         smooth: true,
-        data: monthlyTrend.defaultRates,
+        data: (monthlyTrend as any).defaultRates || [],
         yAxisIndex: 0,
         lineStyle: {
           color: '#F53F3F',
@@ -165,7 +178,7 @@ const Dashboard: React.FC = () => {
       {
         name: '预警数',
         type: 'bar',
-        data: monthlyTrend.alertCounts,
+        data: (monthlyTrend as any).alertCounts || [],
         yAxisIndex: 1,
         barWidth: 20,
         itemStyle: {

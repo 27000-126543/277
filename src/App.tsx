@@ -24,13 +24,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function App() {
-  const { init, isLoading } = useAppStore();
+  const { init, loading } = useAppStore();
 
   useEffect(() => {
     init();
   }, [init]);
 
-  if (isLoading) {
+  if (loading.global) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spin size="large" tip="系统加载中..." />

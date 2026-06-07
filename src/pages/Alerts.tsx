@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Tag, Select, Button, Tabs, Modal, Form, Input, message, Space } from 'antd';
+import { Card, Table, Tag, Select, Button, Tabs, Modal, Form, Input, message, Space, Spin } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { AlertTriangle, Eye, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
@@ -11,7 +11,7 @@ const { TextArea } = Input;
 
 const Alerts: React.FC = () => {
   const navigate = useNavigate();
-  const { alerts, handleAlert, currentUser } = useAppStore();
+  const { alerts, loading, fetchAlerts, handleAlert, currentUser } = useAppStore();
   const [activeTab, setActiveTab] = useState('all');
   const [filters, setFilters] = useState({
     level: '',
@@ -21,6 +21,10 @@ const Alerts: React.FC = () => {
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [handleModalVisible, setHandleModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
 
   const filteredAlerts = alerts.filter(a => {
     if (activeTab === 'pending' && a.status !== 'pending' && a.status !== 'processing') return false;
@@ -165,6 +169,14 @@ const Alerts: React.FC = () => {
 
   const level1Count = alerts.filter(a => a.level === 'level1').length;
   const level2Count = alerts.filter(a => a.level === 'level2').length;
+
+  if (loading.alerts) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="加载预警数据中..." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

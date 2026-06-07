@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   List,
@@ -12,6 +12,7 @@ import {
   Statistic,
   Progress,
   Divider,
+  Spin,
 } from 'antd';
 import {
   FileTextOutlined,
@@ -25,8 +26,22 @@ import { useAppStore } from '@/store/useAppStore';
 import type { WeeklyReport } from '@/types';
 
 const ReportCenter: React.FC = () => {
-  const { weeklyReports } = useAppStore();
-  const [selectedReport, setSelectedReport] = useState<WeeklyReport | null>(weeklyReports[0] || null);
+  const { weeklyReports, loading, fetchReports } = useAppStore();
+  const [selectedReport, setSelectedReport] = useState<WeeklyReport | null>(null);
+
+  useEffect(() => {
+    fetchReports().then(() => {
+      if (weeklyReports.length > 0 && !selectedReport) {
+        setSelectedReport(weeklyReports[0]);
+      }
+    });
+  }, [fetchReports]);
+
+  useEffect(() => {
+    if (weeklyReports.length > 0 && !selectedReport) {
+      setSelectedReport(weeklyReports[0]);
+    }
+  }, [weeklyReports, selectedReport]);
 
   const trendComparisonOption = (report: WeeklyReport) => {
     const metrics = report.trendComparison.map(t => t.metric);
@@ -136,6 +151,14 @@ const ReportCenter: React.FC = () => {
       ),
     },
   ];
+
+  if (loading.reports) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="加载报告数据中..." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

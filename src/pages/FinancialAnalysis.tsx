@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Upload, Button, Progress, Table, Tag, Space, Alert, Tabs } from 'antd';
 import { UploadOutlined, FileExcelOutlined } from '@ant-design/icons';
 import { AlertTriangle, CheckCircle, FileText, Download, ArrowUp, ArrowDown } from 'lucide-react';
@@ -10,11 +10,16 @@ import { Inbox } from 'lucide-react';
 const { Dragger } = Upload;
 
 const FinancialAnalysis: React.FC = () => {
-  const { getFinancialAnalysis } = useAppStore();
+  const { financialAnalysis, fetchEnterprises, uploadFinancialReport } = useAppStore();
   const [uploaded, setUploaded] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [selectedEnterprise, setSelectedEnterprise] = useState<string>('');
 
-  const financialData = getFinancialAnalysis();
+  useEffect(() => {
+    fetchEnterprises();
+  }, [fetchEnterprises]);
+
+  const financialData = financialAnalysis.length > 0 ? financialAnalysis[0] : null;
 
   const uploadProps: UploadProps = {
     name: 'file',

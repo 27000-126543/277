@@ -4,7 +4,7 @@ import * as net from 'net';
 import { initDatabase } from './services/DataInitService';
 import { dataSourceService } from './services/DataSourceService';
 import { reportService } from './services/ReportService';
-import { AlertEngineService } from './services/AlertEngineService';
+import { alertEngineService } from './services/AlertEngineService';
 import { db } from './models/Database';
 import authRoutes from './routes/authRoutes';
 import enterpriseRoutes from './routes/enterpriseRoutes';
@@ -46,8 +46,7 @@ async function startServer() {
     initDatabase();
     console.log('✅ 数据库初始化完成');
 
-    const alertEngine = AlertEngineService.getInstance();
-    alertEngine.runAlertChecks();
+    alertEngineService.runAlertChecks();
     console.log('✅ 初始预警检测完成');
 
     dataSourceService.startScheduledTasks();
