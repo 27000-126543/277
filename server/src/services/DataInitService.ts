@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import type {
   User,
   Enterprise,
@@ -26,13 +27,19 @@ import {
 } from '../utils/helpers';
 import { calculateCreditScore, calculateDefaultProbability, calculateDebtSolvencyIndex } from './CreditScoringService';
 
+const SALT_ROUNDS = 10;
+
+function hashPassword(password: string): string {
+  return bcrypt.hashSync(password, SALT_ROUNDS);
+}
+
 function initUsers(): void {
   const users: User[] = [
     {
       id: generateId(),
       username: 'admin',
       name: '系统管理员',
-      password: '123456',
+      password: hashPassword('123456'),
       role: 'headquarters',
       permissions: ['all'],
       createdAt: getCurrentTime(),
@@ -41,7 +48,7 @@ function initUsers(): void {
       id: generateId(),
       username: 'provincial',
       name: '省级管理员',
-      password: '123456',
+      password: hashPassword('123456'),
       role: 'provincial',
       region: '广东省',
       regionCode: '440000',
@@ -52,7 +59,7 @@ function initUsers(): void {
       id: generateId(),
       username: 'municipal',
       name: '市级管理员',
-      password: '123456',
+      password: hashPassword('123456'),
       role: 'municipal',
       region: '广州市',
       regionCode: '440100',
@@ -63,7 +70,7 @@ function initUsers(): void {
       id: generateId(),
       username: 'analyst',
       name: '分析师',
-      password: '123456',
+      password: hashPassword('123456'),
       role: 'analyst',
       permissions: ['view', 'analyze'],
       createdAt: getCurrentTime(),

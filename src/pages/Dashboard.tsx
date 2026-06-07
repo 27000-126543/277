@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
-import { Select, Card, Tabs } from 'antd';
+import { Select, Card, Tabs, Spin } from 'antd';
 import KPICard from '@/components/KPICard';
 import { useAppStore } from '@/store/useAppStore';
 import { ArrowRight } from 'lucide-react';
@@ -10,9 +10,21 @@ const { Option } = Select;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { provinceData, getKPIData, getIndustryRanking, getRegionRanking, getMonthlyTrendData, getIndustryCreditData } = useAppStore();
+  const { provinceData, getKPIData, getIndustryRanking, getRegionRanking, getMonthlyTrendData, getIndustryCreditData, fetchDashboardData, isLoading } = useAppStore();
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>('6m');
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  if (isLoading && provinceData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" tip="数据加载中..." />
+      </div>
+    );
+  }
 
   const kpiData = getKPIData();
   const industryRanking = getIndustryRanking();

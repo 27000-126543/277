@@ -18,18 +18,21 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const onFinish = (values: { username: string; password: string }) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
-    setTimeout(() => {
-      const success = login(values.username, values.password);
+    try {
+      const success = await login(values.username, values.password);
       if (success) {
         message.success('登录成功！');
         navigate('/dashboard');
       } else {
         message.error('用户名或密码错误！');
       }
+    } catch (error) {
+      message.error('登录失败，请重试');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const presetAccounts = [

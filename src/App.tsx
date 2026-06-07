@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Spin } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import MainLayout from "@/components/Layout/MainLayout";
 import Login from "@/pages/Login";
@@ -23,6 +24,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function App() {
+  const { init, isLoading } = useAppStore();
+
+  useEffect(() => {
+    init();
+  }, [init]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Spin size="large" tip="系统加载中..." />
+      </div>
+    );
+  }
   return (
     <ConfigProvider
       locale={zhCN}
