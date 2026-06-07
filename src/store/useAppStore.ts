@@ -351,9 +351,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchEnterprises: async (params) => {
     try {
       set({ loading: { ...get().loading, enterprises: true }, error: null });
-      const data = await api.enterprises.getList(params);
+      const response = await api.enterprises.getList(params);
       set({ 
-        enterprises: data, 
+        enterprises: response.data || [], 
         loading: { ...get().loading, enterprises: false }
       });
     } catch (error: any) {
@@ -369,9 +369,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchAlerts: async (params) => {
     try {
       set({ loading: { ...get().loading, alerts: true }, error: null });
-      const data = await api.alerts.getList(params);
+      const response = await api.alerts.getList(params);
       set({ 
-        alerts: data, 
+        alerts: response.data || [], 
         loading: { ...get().loading, alerts: false }
       });
     } catch (error: any) {
@@ -387,9 +387,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchApprovals: async (params) => {
     try {
       set({ loading: { ...get().loading, approvals: true }, error: null });
-      const data = await api.approvals.getList(params);
+      const response = await api.approvals.getList(params);
       set({ 
-        approvalProcesses: data, 
+        approvalProcesses: response.data || [], 
         loading: { ...get().loading, approvals: false }
       });
     } catch (error: any) {
@@ -405,9 +405,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchReports: async () => {
     try {
       set({ loading: { ...get().loading, reports: true }, error: null });
-      const data = await api.reports.getList();
+      const response = await api.reports.getList();
       set({ 
-        weeklyReports: data, 
+        weeklyReports: response.data || [], 
         loading: { ...get().loading, reports: false }
       });
     } catch (error: any) {
@@ -423,9 +423,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchProvinceData: async () => {
     try {
       set({ loading: { ...get().loading, provinceData: true }, error: null });
-      const data = await api.dashboard.getProvinceData();
+      const response = await api.dashboard.getProvinceData();
       set({ 
-        provinceData: data, 
+        provinceData: response.data || [], 
         loading: { ...get().loading, provinceData: false }
       });
     } catch (error: any) {
@@ -449,11 +449,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         api.dashboard.getIndustryCredit(),
       ]);
       set({
-        kpiData: kpi,
-        industryRanking: industryRank,
-        regionRanking: regionRank,
-        monthlyTrend: monthly,
-        industryCredit: industryCredit,
+        kpiData: kpi.data || [],
+        industryRanking: industryRank.data || [],
+        regionRanking: regionRank.data || [],
+        monthlyTrend: monthly.data || [],
+        industryCredit: industryCredit.data || [],
         loading: { ...get().loading, dashboard: false },
       });
     } catch (error: any) {
@@ -473,7 +473,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchEnterpriseDetail: async (id) => {
     try {
       set({ loading: { ...get().loading, enterprises: true }, error: null });
-      const data = await api.enterprises.getDetail(id);
+      const response = await api.enterprises.getDetail(id);
+      const data = response.data;
       set(state => ({
         enterprises: state.enterprises.some(e => e.id === id)
           ? state.enterprises.map(e => e.id === id ? data : e)

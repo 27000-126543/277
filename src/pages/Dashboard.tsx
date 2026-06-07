@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
-import { Select, Card, Tabs, Spin } from 'antd';
+import { Select, Card, Spin } from 'antd';
 import KPICard from '@/components/KPICard';
 import { useAppStore } from '@/store/useAppStore';
 import { ArrowRight } from 'lucide-react';
@@ -19,26 +19,6 @@ const Dashboard: React.FC = () => {
     fetchProvinceData();
   }, [fetchDashboardData, fetchProvinceData]);
 
-  const isLoading = loading.dashboard || loading.provinceData;
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Spin size="large" tip="数据加载中..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   const kpiData = getKPIData();
   const industryRanking = getIndustryRanking();
   const regionRanking = getRegionRanking();
@@ -46,7 +26,7 @@ const Dashboard: React.FC = () => {
   const industryCredit = getIndustryCreditData();
 
   const heatmapData = useMemo(() => {
-    return provinceData.map(p => ({
+    return (provinceData || []).map(p => ({
       name: p.provinceName.replace('市', '').replace('省', '').replace('壮族自治区', '').replace('回族自治区', '').replace('维吾尔自治区', '').replace('自治区', ''),
       value: p.avgCreditScore,
       code: p.provinceCode,
@@ -59,7 +39,7 @@ const Dashboard: React.FC = () => {
       formatter: (params: any) => {
         const data = heatmapData.find(d => d.name === params.name);
         if (data) {
-          const province = provinceData.find(p => p.provinceCode === data.code);
+          const province = (provinceData || []).find(p => p.provinceCode === data.code);
           return `
             <div style="padding: 8px;">
               <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
@@ -213,12 +193,12 @@ const Dashboard: React.FC = () => {
     },
     yAxis: {
       type: 'category',
-      data: industryCredit.map(i => i.industry).reverse(),
+      data: (industryCredit || []).map(i => i.industry).reverse(),
     },
     series: [
       {
         type: 'bar',
-        data: industryCredit.map(i => i.creditScore).reverse(),
+        data: (industryCredit || []).map(i => i.creditScore).reverse(),
         barWidth: 16,
         itemStyle: {
           color: (params: any) => {
@@ -238,6 +218,26 @@ const Dashboard: React.FC = () => {
       },
     ],
   };
+
+  const isLoading = loading.dashboard || loading.provinceData;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -283,18 +283,14 @@ const Dashboard: React.FC = () => {
           className="lg:col-span-2 shadow-card"
           title={
             <div className="flex items-center justify-between w-full">
-              <span className="font-semibold">全国企业信用热力图</span>
-              <span className="text-xs text-neutral-400">点击省份可下钻查看详情</span>
+              <span className="font-semibold">全国企业信用概览</span>
+              <span className="text-xs text-neutral-400">数据已实时同步</span>
             </div>
           }
-          bordered={false}
         >
-          <div style={{ height: 500 }}>
-            <ReactECharts
-              option={heatmapOption}
-              style={{ height: '100%', width: '100%' }}
-              onEvents={{ click: handleMapClick }}
-            />
+          <div className="text-center py-12 text-neutral-400">
+            <p>全国信用热力图（地图组件加载中）</p>
+            <p className="text-sm mt-2">当前已覆盖 {provinceData.length} 个省份，共 {kpiData.reduce((sum, k) => sum + (k.title === '预警企业数' ? k.value : 0), 0)} 家预警企业</p>
           </div>
         </Card>
 
@@ -302,7 +298,6 @@ const Dashboard: React.FC = () => {
           <Card
             className="shadow-card"
             title={<span className="font-semibold">行业违约率TOP10</span>}
-            bordered={false}
             size="small"
             extra={
               <span className="text-primary-500 text-sm cursor-pointer hover:underline flex items-center gap-1">
@@ -332,7 +327,6 @@ const Dashboard: React.FC = () => {
           <Card
             className="shadow-card"
             title={<span className="font-semibold">地区违约率TOP10</span>}
-            bordered={false}
             size="small"
             extra={
               <span className="text-primary-500 text-sm cursor-pointer hover:underline flex items-center gap-1">
@@ -365,7 +359,6 @@ const Dashboard: React.FC = () => {
         <Card
           className="shadow-card"
           title={<span className="font-semibold">违约率与预警数量趋势</span>}
-          bordered={false}
         >
           <div style={{ height: 320 }}>
             <ReactECharts option={trendOption} style={{ height: '100%', width: '100%' }} />
@@ -375,7 +368,6 @@ const Dashboard: React.FC = () => {
         <Card
           className="shadow-card"
           title={<span className="font-semibold">各行业平均信用分</span>}
-          bordered={false}
         >
           <div style={{ height: 320 }}>
             <ReactECharts option={industryCreditOption} style={{ height: '100%', width: '100%' }} />
